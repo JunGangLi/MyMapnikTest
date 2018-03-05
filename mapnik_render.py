@@ -1,0 +1,16 @@
+import mapnik
+m=mapnik.Map(10800,5400)
+m.background=mapnik.Color('white')
+shpLayer=mapnik.Layer('SHP')
+shpLayer.datasource=mapnik.Shapefile(file="dltb.shp")
+shpStyle=mapnik.Style()
+shpRule=mapnik.Rule()
+shpRule.symbols.append(mapnik.PolygonSymbolizer(mapnik.Color('#FFF5EE')))
+#shpRule.symbols.append(mapnik.LineSymbolizer(mapnik.Color("rgb(50%,50%,50%),0.1")))
+shpRule.symbols.append(mapnik.LineSymbolizer(mapnik.Color('rgb(50%,50%,50%)'),0.1))
+shpStyle.rules.append(shpRule);
+m.append_style("SHPStyle",shpStyle)
+shpLayer.styles.append('SHPStyle')
+m.layers.append(shpLayer)
+m.zoom_all()
+mapnik.render_to_file(m,"a1",'png')
