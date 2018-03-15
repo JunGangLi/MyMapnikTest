@@ -10,8 +10,10 @@ import os
 #import ToolFunction
 from ToolFunction import *
 
-map = mapnik.Map(256, 256)
-map.background = mapnik.Color('white');
+bufferWidth=0;
+map = mapnik.Map(256+bufferWidth, 256+bufferWidth)
+#加入缓冲区可以避免在拼接时出现缝隙
+map.background = mapnik.Color('white')
 style=mapnik.Style()
 rule=mapnik.Rule()
 rule.symbols.append(mapnik.RasterSymbolizer())
@@ -59,8 +61,11 @@ for box in boxlist:
                 os.makedirs('%s\%s\%s' % (os.path.abspath('.'),'tiles',box[0]))
             if os.path.exists(("%s\%s\%s\%s"%(os.path.abspath('.'),"tiles",box[0],zoomRank)))!=True:
                 os.makedirs(("%s\%s\%s\%s"%(os.path.abspath('.'),"tiles",box[0],zoomRank)))
-            index=index+1            
-            map.zoom_to_box(grids[rc])
+            index=index+1      
+            xResolution=abs((grids[rc].maxx-grids[rc].minx)/256)
+            yResolution=abs((grids[rc].maxY-grids[rc].minY)/256)
+            map.zoom_to_box(mapnik.Box2d(grids[rc].minx-bufferWidth*xResolution,grids[rc].miny-bufferWidth*yResolution,grids[rc].maxx+bufferWidth*xResolution,grids[rc].maxy+bufferWidth*yResolution))
+            #map.zoom_to_box(grids[rc])
             mapnik.save_map(map,mapXml)
             mapnik.render_to_file(map,png)
 

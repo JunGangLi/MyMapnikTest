@@ -51,7 +51,7 @@ def createGrid02(envelopeParam,widthCount=1,heightCont=1):
     """
     把输入的mapnik.Box2d按指定的行列数目进行划分，最后返回划分的格网
     返回值是字典{（行号，列号）：box}
-    行列号从1开始
+    行列号从1开始    
     """
     reslut={}
     print envelopeParam.minx,envelopeParam.maxx
@@ -83,7 +83,7 @@ def createGrid03(envelopeParam,zoom):
 #从shpfile文件获取格网
 def getBoxFromShp(shapeFile):
     """
-    根据shapefile的格网生成grid列表
+    把shapefile的格网生成grid列表
     返回boxs的列表(fid,Box2d)
     """
     boxlist=[]
