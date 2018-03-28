@@ -1,13 +1,20 @@
+# -*- coding: utf-8 -*-
 import mapnik
-m=mapnik.Map(9256,9256)
+import ToolFunction
+import os,time
+from ToolFunction import *
+
+timeStart=time.time()
+m=mapnik.Map(256,256)
 m.background=mapnik.Color('white')
 shpLayer=mapnik.Layer('SHP')
-shpLayer.datasource=mapnik.Shapefile(file=r"D:\LIJUNGANG\work\MapServer\mapnik_data\dltb.shp")
+shpLayer.datasource=mapnik.Shapefile(file=r"D:\LIJUNGANG\work\MapServer\mapnik_data\dltb_clip.shp")
+lineLayer=mapnik.Layer('Line')
+lineLayer.datasource=mapnik.Shapefile(file=r"D:\LIJUNGANG\work\MapServer\mapnik_data\xzdm_clip.shp")
+
 shpStyle=mapnik.Style()
-
-forestRule=mapnik.Rule()
-
-
+shpStyle.filter_mode=mapnik.filter_mode.FIRST
+#forestRule=mapnik.Rule()
 farmlandRule011=mapnik.Rule()
 filter011=mapnik.Filter("[DLBM]='011'")
 farmlandRule011.filter=filter011
@@ -222,12 +229,70 @@ building204.filter=filter204
 building204.symbols.append(mapnik.PolygonSymbolizer(mapnik.Color("rgb(230,120,130)")))
 shpStyle.rules.append(building204)
 
-#shpRule=mapnik.Rule()
-#shpRule.symbols.append(mapnik.LineSymbolizer(mapnik.Color('rgb(50%,50%,50%)'),0.1))
-#shpStyle.rules.append(shpRule)
+lineStyle=mapnik.Style()
+lineStyle.filter_mode=mapnik.filter_mode.FIRST
+line104=mapnik.Rule()
+lineFilter104=mapnik.Filter("[DLBM]='104'")
+line104.filter=lineFilter104
+line104Symbo=mapnik.LineSymbolizer()
+stroke104=mapnik.Stroke(mapnik.Color("rgb(170,85,80)"),0.2)
+stroke104.add_dash(1.0,3.0)
+line104Symbo.stroke=stroke104
+line104.symbols.append(line104Symbo)
+lineStyle.rules.append(line104)
+
+line117=mapnik.Rule()
+lineFilter117=mapnik.Filter("[DLBM]='117'")
+line117.filter=lineFilter117
+line117Symbo=mapnik.LineSymbolizer()
+stroke117=mapnik.Stroke(mapnik.Color("rgb(0,120,200)"),0.25)
+line117Symbo.stroke=stroke117
+line117.symbols.append(line117Symbo)
+lineStyle.rules.append(line117)
+
+line123=mapnik.Rule()
+lineFilter123=mapnik.Filter("[DLBM]='123'")
+line123.filter=lineFilter123
+line123Symbo=mapnik.LineSymbolizer()
+stroke123=mapnik.Stroke(mapnik.Color("rgb(0,0,0)"),0.2)
+line123Symbo.stroke=stroke123
+line123.symbols.append(line123Symbo)
+lineStyle.rules.append(line123)
+
 m.append_style("SHPStyle",shpStyle)
+m.append_style("LineStyle",lineStyle)
 shpLayer.styles.append('SHPStyle')
+lineLayer.styles.append('LineStyle')
+m.layers.append(lineLayer)
 m.layers.append(shpLayer)
-m.zoom_all()
-mapnik.save_map(m,"A5.xml")
-mapnik.render_to_file(m,"a5.png",'png')
+bufferWidth=0
+index=0
+boxlist=getBoxFromShp(r"D:\LIJUNGANG\work\MapServer\mapnik_data\fishnet.shp")
+zoomStart=5
+zoomEnd=6
+for box in boxlist:
+    for zoomRank in range(zoomStart,zoomEnd):
+        grids=createGrid02(box[1],widthCount=2**(zoomRank-1),heightCont=2**(zoomRank-1))
+        for rc in grids:            
+            if not os.path.exists("{0}\{1}".format(os.path.abspath('.'),'VectorTiles')):
+                os.mkdir("{0}\{1}".format(os.path.abspath('.'),'VectorTiles'))
+            png='%s\%s\%s\%s\%sE%sN.png'%(os.path.abspath('.'),'VectorTiles',box[0],zoomRank,rc[0],rc[1])
+            if os.path.exists(png):
+                continue
+            mapXml='%s\%s\%s\%s\%sE%sN.xml'%(os.path.abspath('.'),'VectorTiles',box[0],zoomRank,rc[0],rc[1])
+            if(os.path.exists('%s\%s\%s' % (os.path.abspath('.'),'VectorTiles',box[0]))!=True):
+                    os.makedirs('%s\%s\%s' % (os.path.abspath('.'),'VectorTiles',box[0]))
+            if os.path.exists(("%s\%s\%s\%s"%(os.path.abspath('.'),"VectorTiles",box[0],zoomRank)))!=True:
+                os.makedirs(("%s\%s\%s\%s"%(os.path.abspath('.'),"VectorTiles",box[0],zoomRank)))
+            index=index+1
+            xResolution=abs((grids[rc].maxx-grids[rc].minx)/256)
+            yResolution=abs((grids[rc].maxy-grids[rc].miny)/256)
+            m.zoom_to_box(mapnik.Box2d(grids[rc].minx-bufferWidth*xResolution,grids[rc].miny-bufferWidth*yResolution,grids[rc].maxx+bufferWidth*xResolution,grids[rc].maxy+bufferWidth*yResolution))
+            mapnik.save_map(m,mapXml)
+            mapnik.render_to_file(m,png)
+log=open("log.txt",'a')
+timeEnd=time.time()
+print str(timeEnd-timeStart)
+log.write('{0};{1};{2}\r\n'.format(zoomStart,zoomEnd,str(timeEnd-timeStart)))
+log.close()
+
